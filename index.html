@@ -82,6 +82,7 @@
   </div>
 
   <div id="loadingState" class="loading-banner">Loading channels…</div>
+  <div id="errorState" style="display:none; margin-top:16px;"></div>
 
   <div class="footer">DrupalHelps.com</div>
 </div>
@@ -118,8 +119,17 @@ async function fetchChannel(handle) {
 
 async function init() {
   const results = await Promise.allSettled(HANDLES.map(fetchChannel));
-  results.forEach(r => { if (r.status === 'fulfilled') channels.push(r.value); });
+  const errors = [];
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') channels.push(r.value);
+    else errors.push(`@${HANDLES[i]}: ${r.reason?.message || r.reason}`);
+  });
   document.getElementById('loadingState').style.display = 'none';
+  if (errors.length) {
+    const el = document.getElementById('errorState');
+    el.style.display = 'block';
+    el.innerHTML = `<div style="background:#1a1d27;border:1px solid #e05c5c;border-radius:10px;padding:16px;color:#e05c5c;font-size:13px;"><strong>Errors loading channels:</strong><ul style="margin-top:8px;padding-left:20px">${errors.map(e => `<li>${e}</li>`).join('')}</ul></div>`;
+  }
   render();
 }
 
