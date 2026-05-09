@@ -17,24 +17,12 @@
   .eyebrow { font-size: 11px; color: var(--accent); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
   h1 { font-size: 26px; font-weight: 800; }
   .subtitle { color: var(--muted); font-size: 14px; margin-top: 4px; margin-bottom: 28px; }
-  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-  .panel-label { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; }
-  input { flex: 1; min-width: 200px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; color: var(--text); font-size: 14px; outline: none; }
-  input::placeholder { color: var(--muted); }
-  .btn { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 10px 20px; cursor: pointer; font-weight: 700; font-size: 14px; white-space: nowrap; }
-  .btn:disabled { background: var(--border); cursor: default; }
-  .btn-outline { background: none; border: 1px solid var(--accent); color: var(--accent); border-radius: 7px; padding: 6px 14px; cursor: pointer; font-size: 13px; font-weight: 600; }
-  .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
-  .success-msg { color: var(--success); font-size: 13px; margin-top: 8px; }
-  .error-msg { color: var(--red); font-size: 13px; margin-top: 8px; }
   .view-toggle { display: flex; gap: 8px; }
   .view-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 6px 16px; cursor: pointer; font-size: 13px; font-weight: 600; }
   .view-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
   .channel-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; position: relative; }
-  .remove-btn { position: absolute; top: 12px; right: 12px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; }
   .card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
   .rank-badge { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0; }
   .thumb { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
@@ -52,8 +40,7 @@
   .video-title { color: var(--text); font-size: 13px; font-weight: 600; text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .video-meta { color: var(--muted); font-size: 12px; margin-top: 3px; }
   .card-footer { color: var(--muted); font-size: 12px; margin-top: 12px; }
-  .empty { text-align: center; padding: 48px 20px; color: var(--muted); border: 1px dashed var(--border); border-radius: 10px; }
-  .empty-title { font-size: 16px; color: var(--text); margin-bottom: 8px; }
+  .loading-banner { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 14px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th { padding: 10px 14px; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; }
   th.active { color: var(--accent); }
@@ -61,35 +48,13 @@
   tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
   .text-right { text-align: right; }
   .footer { margin-top: 32px; text-align: center; color: var(--muted); font-size: 12px; }
-  .loading-msg { color: var(--muted); font-size: 13px; margin-top: 8px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="eyebrow">DrupalHelps.com</div>
   <h1>YouTube Competitor Intelligence</h1>
-  <p class="subtitle">Live data via YouTube Data API v3 — track up to 10 channels</p>
-
-  <div class="panel">
-    <div class="panel-label">YouTube Data API Key</div>
-    <div class="row">
-      <input type="password" id="apiKeyInput" placeholder="Paste your YouTube Data API v3 key...">
-      <button class="btn" onclick="saveKey()">Save Key</button>
-    </div>
-    <div id="keyMsg"></div>
-    <p class="hint">Need a key? Go to console.cloud.google.com, enable YouTube Data API v3, create an API key under Credentials.</p>
-  </div>
-
-  <div class="panel">
-    <div class="panel-label">Add Channel (<span id="chCount">0</span>/10)</div>
-    <div class="row">
-      <input type="text" id="channelInput" placeholder="@handle, YouTube URL, or UC... channel ID" onkeydown="if(event.key==='Enter')addChannel()">
-      <button class="btn" id="addBtn" onclick="addChannel()">Add Channel</button>
-    </div>
-    <div id="channelError"></div>
-    <div id="loadingMsg"></div>
-    <p class="hint">Examples: @webwash &nbsp;|&nbsp; https://youtube.com/@drupal &nbsp;|&nbsp; UCxxxxxx</p>
-  </div>
+  <p class="subtitle">Live data via YouTube Data API v3</p>
 
   <div id="channelsSection" style="display:none">
     <div class="toolbar">
@@ -116,16 +81,15 @@
     </div>
   </div>
 
-  <div id="emptyState" class="empty">
-    <div class="empty-title">No channels yet</div>
-    <p>Save your API key and add a competitor channel above.</p>
-  </div>
+  <div id="loadingState" class="loading-banner">Loading channels…</div>
 
   <div class="footer">DrupalHelps.com</div>
 </div>
 
 <script>
 const PROXY = '/api/youtube';
+const HANDLES = ['webwash','DrupalAssociation','DriesBuytaert','drupaleasy','drupal_ai','freelygive','EvolvingWeb'];
+
 let channels = [];
 let currentView = 'cards';
 let sortKey = 'subscriberCount';
@@ -145,64 +109,17 @@ const fmtDate = iso => {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-const parseInput = input => {
-  input = input.trim();
-  const ucMatch = input.match(/(?:youtube\.com\/channel\/|^)(UC[A-Za-z0-9_-]{20,})/);
-  if (ucMatch) return { type: 'id', value: ucMatch[1] };
-  const handleMatch = input.match(/youtube\.com\/@([A-Za-z0-9_.-]+)/);
-  if (handleMatch) return { type: 'handle', value: handleMatch[1] };
-  if (input.startsWith('@')) return { type: 'handle', value: input.slice(1) };
-  return { type: 'handle', value: input };
-};
-
-function loadKey() {
-  const k = localStorage.getItem('yt_api_key');
-  if (k) {
-    document.getElementById('apiKeyInput').value = k;
-    document.getElementById('keyMsg').innerHTML = '<p class="success-msg">API key loaded from storage.</p>';
-  }
+async function fetchChannel(handle) {
+  const res = await fetch(`${PROXY}?handle=${encodeURIComponent(handle)}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Lookup failed.');
+  return data;
 }
 
-function saveKey() {
-  const k = document.getElementById('apiKeyInput').value.trim();
-  if (!k) { document.getElementById('keyMsg').innerHTML = '<p class="error-msg">Please enter an API key.</p>'; return; }
-  localStorage.setItem('yt_api_key', k);
-  document.getElementById('keyMsg').innerHTML = '<p class="success-msg">API key saved — will persist across sessions.</p>';
-}
-
-function getKey() { return document.getElementById('apiKeyInput').value.trim(); }
-
-async function addChannel() {
-  const input = document.getElementById('channelInput').value.trim();
-  const key = getKey();
-  const errEl = document.getElementById('channelError');
-  const loadEl = document.getElementById('loadingMsg');
-  errEl.innerHTML = '';
-  if (!key) { errEl.innerHTML = '<p class="error-msg">Please save your API key first.</p>'; return; }
-  if (!input) { errEl.innerHTML = '<p class="error-msg">Enter a channel URL, @handle, or ID.</p>'; return; }
-  if (channels.length >= 10) { errEl.innerHTML = '<p class="error-msg">Maximum 10 channels reached.</p>'; return; }
-  document.getElementById('addBtn').disabled = true;
-  loadEl.innerHTML = '<p class="loading-msg">Looking up channel...</p>';
-  try {
-    const { type, value } = parseInput(input);
-    const param = type === 'id' ? `id=${value}` : `handle=${encodeURIComponent(value)}`;
-    const res = await fetch(`${PROXY}?key=${encodeURIComponent(key)}&${param}`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Lookup failed.');
-    if (channels.find(c => c.id === data.id)) { errEl.innerHTML = '<p class="error-msg">Channel already in dashboard.</p>'; return; }
-    channels.push(data);
-    document.getElementById('channelInput').value = '';
-    render();
-  } catch(e) {
-    errEl.innerHTML = `<p class="error-msg">${e.message}</p>`;
-  } finally {
-    document.getElementById('addBtn').disabled = false;
-    loadEl.innerHTML = '';
-  }
-}
-
-function removeChannel(id) {
-  channels = channels.filter(c => c.id !== id);
+async function init() {
+  const results = await Promise.allSettled(HANDLES.map(fetchChannel));
+  results.forEach(r => { if (r.status === 'fulfilled') channels.push(r.value); });
+  document.getElementById('loadingState').style.display = 'none';
   render();
 }
 
@@ -226,11 +143,8 @@ function sortBy(key) {
 }
 
 function render() {
-  const section = document.getElementById('channelsSection');
-  const empty = document.getElementById('emptyState');
-  if (!channels.length) { section.style.display = 'none'; empty.style.display = 'block'; return; }
-  section.style.display = 'block'; empty.style.display = 'none';
-  document.getElementById('chCount').textContent = channels.length;
+  if (!channels.length) return;
+  document.getElementById('channelsSection').style.display = 'block';
   document.getElementById('trackingLabel').textContent = `${channels.length} channel${channels.length !== 1 ? 's' : ''} tracked`;
 
   const sorted = [...channels].sort((a, b) => {
@@ -238,10 +152,8 @@ function render() {
     return sortDir === 'desc' ? vb - va : va - vb;
   });
 
-  // Cards
   document.getElementById('cardsView').innerHTML = sorted.map((ch, i) => `
     <div class="channel-card">
-      <button class="remove-btn" onclick="removeChannel('${ch.id}')">×</button>
       <div class="card-head">
         <div class="rank-badge">#${i+1}</div>
         ${ch.thumbnail ? `<img class="thumb" src="${ch.thumbnail}" alt="">` : ''}
@@ -270,7 +182,6 @@ function render() {
     </div>
   `).join('');
 
-  // Table
   document.getElementById('tableBody').innerHTML = sorted.map((ch, i) => `
     <tr>
       <td class="text-right" style="color:var(--muted)">${i+1}</td>
@@ -284,8 +195,7 @@ function render() {
   setView(currentView);
 }
 
-loadKey();
-render();
+init();
 </script>
 </body>
 </html>
