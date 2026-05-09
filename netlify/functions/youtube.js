@@ -9,12 +9,12 @@ export default async (request, context) => {
     });
   }
 
+  const apiKey = Deno.env.get("YOUTUBE_API_KEY");
+  if (!apiKey) return json({ error: "Server misconfiguration: missing API key" }, 500);
+
   const url = new URL(request.url);
-  const apiKey = url.searchParams.get("key");
   const handle = url.searchParams.get("handle");
   const channelId = url.searchParams.get("id");
-
-  if (!apiKey) return json({ error: "Missing API key" }, 400);
 
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -24,7 +24,6 @@ export default async (request, context) => {
   try {
     let resolvedId = channelId;
 
-    // Resolve handle to channel ID if needed
     if (!resolvedId && handle) {
       const r = await fetch(
         `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`
@@ -37,7 +36,6 @@ export default async (request, context) => {
 
     if (!resolvedId) return json({ error: "Provide handle or id parameter." }, 400, headers);
 
-    // Fetch channel snippet, statistics, and contentDetails
     const statsRes = await fetch(
       `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&id=${resolvedId}&key=${apiKey}`
     );
@@ -48,7 +46,6 @@ export default async (request, context) => {
     const ch = statsData.items[0];
     const uploadsPlaylistId = ch.contentDetails?.relatedPlaylists?.uploads;
 
-    // Fetch last 5 videos from uploads playlist
     let videos = [];
     if (uploadsPlaylistId) {
       const plRes = await fetch(
