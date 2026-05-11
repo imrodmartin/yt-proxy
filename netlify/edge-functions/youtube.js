@@ -100,5 +100,3 @@ function json(data, status = 200, extraHeaders = {}) {
     },
   });
 }
-
-export const config = { path: "/api/youtube" };
