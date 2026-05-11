@@ -15,6 +15,7 @@ export default async (request, context) => {
   const url = new URL(request.url);
   const handle = url.searchParams.get("handle");
   const channelId = url.searchParams.get("id");
+  const topVideos = url.searchParams.get("topVideos");
 
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -22,6 +23,35 @@ export default async (request, context) => {
   };
 
   try {
+    // Top performing videos for the past year
+    if (topVideos && channelId) {
+      const publishedAfter = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+      const searchRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=viewCount&publishedAfter=${publishedAfter}&type=video&maxResults=5&key=${apiKey}`
+      );
+      const searchData = await searchRes.json();
+      if (searchData.error) return json({ error: searchData.error.message }, 400, headers);
+      if (!searchData.items?.length) return json([], 200, headers);
+
+      const videoIds = searchData.items.map(i => i.id.videoId).join(",");
+      const vRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds}&key=${apiKey}`
+      );
+      const vData = await vRes.json();
+      if (vData.error) return json({ error: vData.error.message }, 400, headers);
+
+      const videos = (vData.items || []).map(v => ({
+        id: v.id,
+        title: v.snippet.title,
+        publishedAt: v.snippet.publishedAt,
+        thumbnail: v.snippet.thumbnails?.medium?.url || "",
+        viewCount: v.statistics.viewCount || "0",
+        commentCount: v.statistics.commentCount || "0",
+        url: `https://www.youtube.com/watch?v=${v.id}`,
+      }));
+      return json(videos, 200, headers);
+    }
+
     let resolvedId = channelId;
 
     if (!resolvedId && handle) {
