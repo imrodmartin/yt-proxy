@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YouTube Competitor Intelligence — DrupalHelps.com</title>
+<title>Drupal YouTube Channels — DrupalHelps.com</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -53,7 +53,7 @@
 <body>
 <div class="wrap">
   <div class="eyebrow">DrupalHelps.com</div>
-  <h1>YouTube Competitor Intelligence</h1>
+  <h1>Drupal YouTube Channels</h1>
   <p class="subtitle">Live data via YouTube Data API v3</p>
 
   <div id="channelsSection" style="display:none">
@@ -96,6 +96,8 @@ let currentView = 'cards';
 let sortKey = 'subscriberCount';
 let sortDir = 'desc';
 let expandedCards = {};
+let expandedTopCards = {};
+let topVideosCache = {};
 
 const fmt = n => {
   if (!n && n !== 0) return '—';
@@ -135,6 +137,23 @@ async function init() {
 
 function toggleVideos(id) {
   expandedCards[id] = !expandedCards[id];
+  render();
+}
+
+async function toggleTopVideos(id) {
+  expandedTopCards[id] = !expandedTopCards[id];
+  if (expandedTopCards[id] && !topVideosCache[id]) {
+    topVideosCache[id] = 'loading';
+    render();
+    try {
+      const res = await fetch(`${PROXY}?topVideos=true&id=${id}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load top videos.');
+      topVideosCache[id] = data;
+    } catch(e) {
+      topVideosCache[id] = e;
+    }
+  }
   render();
 }
 
@@ -178,7 +197,10 @@ function render() {
         <div class="stat-box"><div class="stat-val" style="color:var(--warning)">${fmt(ch.videoCount)}</div><div class="stat-label">Videos</div></div>
       </div>
       ${ch.videos?.length ? `
-        <button class="toggle-videos" onclick="toggleVideos('${ch.id}')">${expandedCards[ch.id] ? 'Hide recent videos' : 'Show last 5 videos'}</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0">
+          <button class="toggle-videos" onclick="toggleVideos('${ch.id}')">${expandedCards[ch.id] ? 'Hide recent videos' : 'Show last 5 videos'}</button>
+          <button class="toggle-videos" onclick="toggleTopVideos('${ch.id}')">${expandedTopCards[ch.id] ? 'Hide top videos' : 'Top videos (past year)'}</button>
+        </div>
         ${expandedCards[ch.id] ? `<div class="videos-list">${ch.videos.map(v => `
           <div class="video-row">
             <a href="${v.url}" target="_blank"><img class="video-thumb" src="${v.thumbnail}" alt=""></a>
@@ -187,6 +209,21 @@ function render() {
               <div class="video-meta">${fmtDate(v.publishedAt)} &nbsp;|&nbsp; <span style="color:var(--success)">${fmt(v.viewCount)} views</span> &nbsp;|&nbsp; <span style="color:var(--warning)">${fmt(v.commentCount)} comments</span></div>
             </div>
           </div>`).join('')}</div>` : ''}
+        ${expandedTopCards[ch.id] ? (() => {
+          const tv = topVideosCache[ch.id];
+          if (tv === 'loading') return '<div style="color:var(--muted);font-size:13px;margin-top:8px">Loading…</div>';
+          if (tv instanceof Error) return `<div style="color:var(--red);font-size:13px;margin-top:8px">${tv.message}</div>`;
+          if (Array.isArray(tv) && tv.length) return `<div class="videos-list">${tv.map(v => `
+            <div class="video-row">
+              <a href="${v.url}" target="_blank"><img class="video-thumb" src="${v.thumbnail}" alt=""></a>
+              <div style="flex:1;min-width:0">
+                <a class="video-title" href="${v.url}" target="_blank">${v.title}</a>
+                <div class="video-meta">${fmtDate(v.publishedAt)} &nbsp;|&nbsp; <span style="color:var(--success)">${fmt(v.viewCount)} views</span> &nbsp;|&nbsp; <span style="color:var(--warning)">${fmt(v.commentCount)} comments</span></div>
+              </div>
+            </div>`).join('')}</div>`;
+          if (Array.isArray(tv)) return '<div style="color:var(--muted);font-size:13px;margin-top:8px">No videos found in the past year.</div>';
+          return '';
+        })() : ''}
       ` : ''}
       <div class="card-footer">${ch.country ? `Country: <span style="color:var(--text)">${ch.country}</span>` : ''}</div>
     </div>
