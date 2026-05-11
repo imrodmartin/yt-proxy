@@ -199,7 +199,7 @@ function render() {
       ${ch.videos?.length ? `
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0">
           <button class="toggle-videos" onclick="toggleVideos('${ch.id}')">${expandedCards[ch.id] ? 'Hide recent videos' : 'Show last 5 videos'}</button>
-          <button class="toggle-videos" onclick="toggleTopVideos('${ch.id}')">${expandedTopCards[ch.id] ? 'Hide top videos' : 'Top videos (past year)'}</button>
+          <button class="toggle-videos" onclick="toggleTopVideos('${ch.id}')">${expandedTopCards[ch.id] ? 'Hide top videos' : 'Top videos'}</button>
         </div>
         ${expandedCards[ch.id] ? `<div class="videos-list">${ch.videos.map(v => `
           <div class="video-row">
