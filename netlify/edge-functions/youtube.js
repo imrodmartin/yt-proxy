@@ -40,15 +40,17 @@ export default async (request, context) => {
       const vData = await vRes.json();
       if (vData.error) return json({ error: vData.error.message }, 400, headers);
 
-      const videos = (vData.items || []).map(v => ({
-        id: v.id,
-        title: v.snippet.title,
-        publishedAt: v.snippet.publishedAt,
-        thumbnail: v.snippet.thumbnails?.medium?.url || "",
-        viewCount: v.statistics.viewCount || "0",
-        commentCount: v.statistics.commentCount || "0",
-        url: `https://www.youtube.com/watch?v=${v.id}`,
-      }));
+      const videos = (vData.items || [])
+        .map(v => ({
+          id: v.id,
+          title: v.snippet.title,
+          publishedAt: v.snippet.publishedAt,
+          thumbnail: v.snippet.thumbnails?.medium?.url || "",
+          viewCount: v.statistics.viewCount || "0",
+          commentCount: v.statistics.commentCount || "0",
+          url: `https://www.youtube.com/watch?v=${v.id}`,
+        }))
+        .sort((a, b) => parseInt(b.viewCount) - parseInt(a.viewCount));
       return json(videos, 200, headers);
     }
 
