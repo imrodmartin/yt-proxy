@@ -47,6 +47,7 @@
   td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
   tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
   .text-right { text-align: right; }
+  .section-header { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin: 24px 0 12px; }
   .footer { margin-top: 32px; text-align: center; color: var(--muted); font-size: 12px; }
 </style>
 </head>
@@ -64,7 +65,7 @@
         <button class="view-btn" id="btnTable" onclick="setView('table')">Table</button>
       </div>
     </div>
-    <div id="cardsView" class="grid"></div>
+    <div id="cardsView"></div>
     <div id="tableView" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden;">
       <table>
         <thead>
@@ -89,7 +90,10 @@
 
 <script>
 const PROXY = '/api/youtube';
-const HANDLES = ['webwash','DrupalAssociation','DriesBuytaert','drupaleasy','drupal_ai','freelygive','EvolvingWeb','DrupalHelps','AcquiaTV'];
+const CHANNEL_GROUPS = [
+  { label: null, handles: ['webwash','DrupalAssociation','DriesBuytaert','drupaleasy','drupal_ai','freelygive','EvolvingWeb','DrupalHelps','AcquiaTV','TalkingDrupal'] },
+  { label: 'Drupal Camps', handles: ['Drupal4Govnp','fldrupalcamp','DrupalAsheville','midcamp'] },
+];
 
 let channels = [];
 let currentView = 'cards';
@@ -120,11 +124,12 @@ async function fetchChannel(handle) {
 }
 
 async function init() {
-  const results = await Promise.allSettled(HANDLES.map(fetchChannel));
+  const allHandles = CHANNEL_GROUPS.flatMap(g => g.handles.map(h => ({ handle: h, group: g.label })));
+  const results = await Promise.allSettled(allHandles.map(({ handle }) => fetchChannel(handle)));
   const errors = [];
   results.forEach((r, i) => {
-    if (r.status === 'fulfilled') channels.push(r.value);
-    else errors.push(`@${HANDLES[i]}: ${r.reason?.message || r.reason}`);
+    if (r.status === 'fulfilled') channels.push({ ...r.value, group: allHandles[i].group });
+    else errors.push(`@${allHandles[i].handle}: ${r.reason?.message || r.reason}`);
   });
   document.getElementById('loadingState').style.display = 'none';
   if (errors.length) {
@@ -174,17 +179,17 @@ function sortBy(key) {
 function render() {
   if (!channels.length) return;
   document.getElementById('channelsSection').style.display = 'block';
-  document.getElementById('trackingLabel').textContent = `${channels.length} channel${channels.length !== 1 ? 's' : ''} tracked`;
+  document.getElementById('trackingLabel').textContent = `${channels.length} channels tracked`;
 
-  const sorted = [...channels].sort((a, b) => {
+  const sortFn = (a, b) => {
     const va = parseInt(a[sortKey]) || 0, vb = parseInt(b[sortKey]) || 0;
     return sortDir === 'desc' ? vb - va : va - vb;
-  });
+  };
 
-  document.getElementById('cardsView').innerHTML = sorted.map((ch, i) => `
+  const renderCard = (ch, rank) => `
     <div class="channel-card">
       <div class="card-head">
-        <div class="rank-badge">#${i+1}</div>
+        <div class="rank-badge">#${rank}</div>
         ${ch.thumbnail ? `<img class="thumb" src="${ch.thumbnail}" alt="">` : ''}
         <div style="overflow:hidden">
           <div class="ch-title">${ch.title}</div>
@@ -227,17 +232,24 @@ function render() {
       ` : ''}
       <div class="card-footer">${ch.country ? `Country: <span style="color:var(--text)">${ch.country}</span>` : ''}</div>
     </div>
-  `).join('');
+  `;
 
-  document.getElementById('tableBody').innerHTML = sorted.map((ch, i) => `
+  document.getElementById('cardsView').innerHTML = CHANNEL_GROUPS.map(g => {
+    const groupChannels = channels.filter(c => c.group === g.label).sort(sortFn);
+    if (!groupChannels.length) return '';
+    return `${g.label ? `<div class="section-header">${g.label}</div>` : ''}
+      <div class="grid">${groupChannels.map((ch, i) => renderCard(ch, i + 1)).join('')}</div>`;
+  }).join('');
+
+  const allSorted = [...channels].sort(sortFn);
+  document.getElementById('tableBody').innerHTML = allSorted.map((ch, i) => `
     <tr>
       <td class="text-right" style="color:var(--muted)">${i+1}</td>
       <td style="font-weight:500">${ch.title}</td>
       <td class="text-right" style="color:var(--accent-light);font-weight:600">${fmt(ch.subscriberCount)}</td>
       <td class="text-right" style="color:var(--success)">${fmt(ch.viewCount)}</td>
       <td class="text-right" style="color:var(--warning)">${fmt(ch.videoCount)}</td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 
   setView(currentView);
 }
